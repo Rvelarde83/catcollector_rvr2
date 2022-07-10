@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from .models import Cat
 # from django.http import HttpResponse
 
@@ -16,33 +17,45 @@ from .models import Cat
 #   Cat('Yoda', 'himalayan', 'orange ball of fluff', 15),
 #   Cat('Kajit', 'black cat', 'the best cat ever that ran away', 4),
 #   Cat('Simone', 'Russian Blue', ' slow cat', 8)
-# ]    
+# ]
 
 
 # Create your views here.
 
 def home(request):
-  # return HttpResponse('<h1>Hello World /ᐠ｡‸｡ᐟ\ﾉ</h1>')
-  return render(request, 'home.html')
+    # return HttpResponse('<h1>Hello World /ᐠ｡‸｡ᐟ\ﾉ</h1>')
+    return render(request, 'home.html')
 
 
 def about(request):
-  # To send back raw text or an html string use 'HttpResponse'
-  # return HttpResponse('About Page')
-  # To send back a full template file use 'render'
-  return render(request, 'about.html')
+    # To send back raw text or an html string use 'HttpResponse'
+    # return HttpResponse('About Page')
+    # To send back a full template file use 'render'
+    return render(request, 'about.html')
 
 
 def cats_index(request):
     cats = Cat.objects.all()
-    return render(request, 'cats/index.html', { 'cats': cats })
+    return render(request, 'cats/index.html', {'cats': cats})
 
 
 def cats_detail(request, cat_id):
-  ## Get the the individual cat
-  cat = Cat.objects.get(id=cat_id)
-  ## render template, pass it the cat
-  return render(request, 'cats/detail.html', { 'cat': cat })
+    # Get the the individual cat
+    cat = Cat.objects.get(id=cat_id)
+    # render template, pass it the cat
+    return render(request, 'cats/detail.html', {'cat': cat})
 
 
-  
+class CatCreate(CreateView):
+    model = Cat
+    fields = '__all__'
+    success_url = '/cats/'
+
+class CatUpdate(UpdateView):
+  model = Cat
+  # Let's disallow the renaming of a cat by excluding the name field!
+  fields = ['breed', 'description', 'age']
+
+class CatDelete(DeleteView):
+  model = Cat
+  success_url = '/cats/'
