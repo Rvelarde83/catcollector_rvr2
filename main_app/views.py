@@ -3,28 +3,13 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic import ListView, DetailView
 from django.http import HttpResponse
 from .forms import FeedingForm
-from .models import Cat, Toy
+from .models import Cat, Toy, Photo
+import uuid
+import boto3
 
-# from django.http import HttpResponse
+S3_BASE_URL = 'https://s3-us-west-1.amazonaws.com/'
+BUCKET = "rv-collector"
 
-# Demo Cat Data - Replace with Database
-
-# class Cat:
-#   def __init__(self, name, breed, description, age):
-#     self.name = name
-#     self.breed = breed
-#     self.description = description
-#     self.age = age
-
-# cats = [
-#   Cat('Lolo', 'tabby', 'foul little demon', 3),
-#   Cat('Yoda', 'himalayan', 'orange ball of fluff', 15),
-#   Cat('Kajit', 'black cat', 'the best cat ever that ran away', 4),
-#   Cat('Simone', 'Russian Blue', ' slow cat', 8)
-# ]
-
-
-# Create your views here.
 
 def home(request):
     # return HttpResponse('<h1>Hello World /ᐠ｡‸｡ᐟ\ﾉ</h1>')
@@ -68,10 +53,33 @@ def add_feeding(request, cat_id):
         new_feeding.save()
     return redirect('detail', cat_id=cat_id)
 
+
+def add_photo(request, cat_id):
+    # photo-file will be the "name" attribute on the <input type="file">
+    photo_file = request.FILES.get('photo-file', None)
+    if photo_file:
+        s3 = boto3.client('s3')
+        # need a unique "key" for S3 / needs image file extension also
+        key = uuid.uuid4().hex[:6] + \
+            photo_file.name[photo_file.name.rfind('.'):]
+        # just in case something goes wrong
+        try:
+            s3.upload_fileobj(photo_file, BUCKET, key)
+            # build the full url string
+            url = f"{S3_BASE_URL}{BUCKET}/{key}"
+            # we can assign to cat_id or cat (if you have a cat object)
+            photo = Photo(url=url, cat_id=cat_id)
+            photo.save()
+        except:
+            print('An error occurred')
+    return redirect('detail', cat_id=cat_id)
+
+
 def assoc_toy(request, cat_id, toy_id):
-  # Note that you can pass a toy's id instead of the whole object
-  Cat.objects.get(id=cat_id).toys.add(toy_id)
-  return redirect('detail', cat_id=cat_id)
+    # Note that you can pass a toy's id instead of the whole object
+    Cat.objects.get(id=cat_id).toys.add(toy_id)
+    return redirect('detail', cat_id=cat_id)
+
 
 def rm_cat_toy(request, cat_id, toy_id):
     Cat.objects.get(id=cat_id).toys.remove(toy_id)
